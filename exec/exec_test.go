@@ -32,6 +32,7 @@ type testCase struct {
 	Args     []string `json:"args"`
 	Return   string   `json:"return"`
 	Trap     string   `json:"trap"`
+	Error    string   `json:"error"`
 }
 
 type file struct {
@@ -313,8 +314,8 @@ func runTest(fileName string, testCases []testCase, t testing.TB) {
 			b.StopTimer()
 		}
 
-		if err != nil {
-			t.Fatalf("%s, %s: %v", fileName, testCase.Function, err)
+		if err != nil && (testCase.Error == "" || testCase.Error != err.Error()) {
+			t.Fatalf("~ %s, %s: %v", fileName, testCase.Function, err)
 		}
 
 		nanEq := false
@@ -330,7 +331,7 @@ func runTest(fileName string, testCases []testCase, t testing.TB) {
 			continue
 		}
 
-		if !reflect.DeepEqual(res, expected) {
+		if err == nil && !reflect.DeepEqual(res, expected) {
 			t.Fatalf("%s, %s (%d): unexpected return value: got=%v(%v), want=%v(%v) (%s)", fileName, fnString(testCase.Function, testCase.Args), index, reflect.TypeOf(res), res, reflect.TypeOf(expected), expected, testCase.Return)
 		}
 	}

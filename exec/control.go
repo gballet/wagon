@@ -10,8 +10,10 @@ import "errors"
 // an unreachable operator is reached during execution.
 var ErrUnreachable = errors.New("exec: reached unreachable")
 
-func (vm *VM) unreachable() {
-	panic(ErrUnreachable)
+func (vm *VM) unreachable() error {
+	return ErrUnreachable
 }
 
-func (vm *VM) nop() {}
+func (vm *VM) nop() error {
+	return nil
+}

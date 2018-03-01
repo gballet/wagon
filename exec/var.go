@@ -4,28 +4,33 @@
 
 package exec
 
-func (vm *VM) getLocal() {
+func (vm *VM) getLocal() error {
 	index := vm.fetchUint32()
 	vm.pushUint64(vm.ctx.locals[int(index)])
+	return nil
 }
 
-func (vm *VM) setLocal() {
+func (vm *VM) setLocal() error {
 	index := vm.fetchUint32()
 	vm.ctx.locals[int(index)] = vm.popUint64()
+	return nil
 }
 
-func (vm *VM) teeLocal() {
+func (vm *VM) teeLocal() error {
 	index := vm.fetchUint32()
 	val := vm.ctx.stack[len(vm.ctx.stack)-1]
 	vm.ctx.locals[int(index)] = val
+	return nil
 }
 
-func (vm *VM) getGlobal() {
+func (vm *VM) getGlobal() error {
 	index := vm.fetchUint32()
 	vm.pushUint64(vm.globals[int(index)])
+	return nil
 }
 
-func (vm *VM) setGlobal() {
+func (vm *VM) setGlobal() error {
 	index := vm.fetchUint32()
 	vm.globals[int(index)] = vm.popUint64()
+	return nil
 }

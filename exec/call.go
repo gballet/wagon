@@ -6,7 +6,7 @@ package exec
 
 import "errors"
 
-func (vm *VM) doCall(compiled compiledFunction, index int64) {
+func (vm *VM) doCall(compiled compiledFunction, index int64) error {
 	newStack := make([]uint64, compiled.maxDepth)
 	locals := make([]uint64, compiled.totalLocalVars)
 
@@ -25,7 +25,10 @@ func (vm *VM) doCall(compiled compiledFunction, index int64) {
 		curFunc: index,
 	}
 
-	rtrn := vm.execCode(compiled)
+	rtrn, err := vm.execCode(compiled)
+	if err != nil {
+		return err
+	}
 
 	// restore execution context
 	vm.ctx = prevCtxt
@@ -33,6 +36,8 @@ func (vm *VM) doCall(compiled compiledFunction, index int64) {
 	if compiled.returns {
 		vm.pushUint64(rtrn)
 	}
+
+	return nil
 }
 
 var (
@@ -46,12 +51,12 @@ var (
 	ErrUndefinedElementIndex = errors.New("exec: undefined element index")
 )
 
-func (vm *VM) call() {
+func (vm *VM) call() error {
 	index := vm.fetchUint32()
-	vm.doCall(vm.compiledFuncs[index], int64(index))
+	return vm.doCall(vm.compiledFuncs[index], int64(index))
 }
 
-func (vm *VM) callIndirect() {
+func (vm *VM) callIndirect() error {
 	index := vm.fetchUint32()
 	fnExpect := vm.module.Types.Entries[index]
 	_ = vm.fetchUint32() // reserved (https://github.com/WebAssembly/design/blob/27ac254c854994103c24834a994be16f74f54186/BinaryEncoding.md#call-operators-described-here)
@@ -81,5 +86,5 @@ func (vm *VM) callIndirect() {
 		}
 	}
 
-	vm.doCall(vm.compiledFuncs[elemIndex], int64(index))
+	return vm.doCall(vm.compiledFuncs[elemIndex], int64(index))
 }

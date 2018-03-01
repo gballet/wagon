@@ -59,7 +59,7 @@ type VM struct {
 	memory        []byte
 	compiledFuncs []compiledFunction
 
-	funcTable [256]func()
+	funcTable [256]func() error
 }
 
 // As per the WebAssembly spec: https://github.com/WebAssembly/design/blob/27ac254c854994103c24834a994be16f74f54186/Semantics.md#linear-memory
@@ -259,7 +259,10 @@ func (vm *VM) ExecCode(fnIndex int64, args ...uint64) (interface{}, error) {
 	}
 
 	var rtrn interface{}
-	res := vm.execCode(compiled)
+	res, err := vm.execCode(compiled)
+	if err != nil {
+		return 0, err
+	}
 	if compiled.returns {
 		rtrnType := vm.module.GetFunction(int(fnIndex)).Sig.ReturnTypes[0]
 		switch rtrnType {
@@ -279,7 +282,7 @@ func (vm *VM) ExecCode(fnIndex int64, args ...uint64) (interface{}, error) {
 	return rtrn, nil
 }
 
-func (vm *VM) execCode(compiled compiledFunction) uint64 {
+func (vm *VM) execCode(compiled compiledFunction) (uint64, error) {
 outer:
 	for int(vm.ctx.pc) < len(vm.ctx.code) {
 		op := vm.ctx.code[vm.ctx.pc]
@@ -345,12 +348,16 @@ outer:
 			vm.ctx.stack = vm.ctx.stack[:len(vm.ctx.stack)-int(place)]
 			vm.pushUint64(top)
 		default:
-			vm.funcTable[op]()
+			err := vm.funcTable[op]()
+
+			if err != nil {
+				return 0, err
+			}
 		}
 	}
 
 	if compiled.returns {
-		return vm.ctx.stack[len(vm.ctx.stack)-1]
+		return vm.ctx.stack[len(vm.ctx.stack)-1], nil
 	}
-	return 0
+	return 0, nil
 }

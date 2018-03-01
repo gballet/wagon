@@ -69,7 +69,7 @@ func (fn goFunction) call(vm *VM, index int64) {
 	}
 }
 
-func (compiled compiledFunction) call(vm *VM, index int64) {
+func (compiled compiledFunction) call(vm *VM, index int64) error {
 	newStack := make([]uint64, compiled.maxDepth)
 	locals := make([]uint64, compiled.totalLocalVars)
 
@@ -88,7 +88,10 @@ func (compiled compiledFunction) call(vm *VM, index int64) {
 		curFunc: index,
 	}
 
-	rtrn := vm.execCode(compiled)
+	rtrn, err := vm.execCode(compiled)
+	if err != nil {
+		return err
+	}
 
 	//restore execution context
 	vm.ctx = prevCtxt
@@ -96,4 +99,6 @@ func (compiled compiledFunction) call(vm *VM, index int64) {
 	if compiled.returns {
 		vm.pushUint64(rtrn)
 	}
+
+	return nil
 }

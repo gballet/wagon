@@ -261,7 +261,8 @@ func (vm *VM) ExecCode(fnIndex int64, args ...uint64) (interface{}, error) {
 	var rtrn interface{}
 	res, err := vm.execCode(compiled)
 	if err != nil {
-		return 0, err
+		// Emulate the old behavior by panicking if an error occur
+		panic(err)
 	}
 	if compiled.returns {
 		rtrnType := vm.module.GetFunction(int(fnIndex)).Sig.ReturnTypes[0]

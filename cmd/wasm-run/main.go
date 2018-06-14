@@ -5,10 +5,12 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/go-interpreter/wagon/exec"
 	"github.com/go-interpreter/wagon/validate"
@@ -21,6 +23,7 @@ func main() {
 
 	verbose := flag.Bool("v", false, "enable/disable verbose mode")
 	verify := flag.Bool("verify-module", false, "run module verification")
+	debugger := flag.Bool("d", false, "debug mode")
 
 	flag.Parse()
 
@@ -30,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	wasm.SetDebugMode(*verbose)
+	wasm.SetVerboseMode(*verbose)
 
 	f, err := os.Open(flag.Arg(0))
 	if err != nil {
@@ -52,6 +55,31 @@ func main() {
 
 	if m.Export == nil {
 		log.Fatalf("module has no export section")
+	}
+
+	if *debugger {
+		exec.InitDebugger()
+		commandChannel := exec.ConnectToDebugger()
+		input := bufio.NewReader(os.Stdin)
+
+		// Stop at the start of the module
+		commandChannel <- "b 0x0"
+
+		go func() {
+			for {
+				msg := <-commandChannel
+				fmt.Println(msg)
+				fmt.Print("> ")
+				txt, err := input.ReadString('\n')
+				if err != nil {
+					fmt.Println("Error reading command")
+					commandChannel <- "h"
+				} else {
+					command := strings.TrimRight(txt, "\n\r")
+					commandChannel <- command
+				}
+			}
+		}()
 	}
 
 	vm, err := exec.NewVM(m)

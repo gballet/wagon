@@ -390,6 +390,10 @@ outer:
 		default:
 			vm.funcTable[op]()
 		}
+
+		if isBreakpoint(vm.ctx.pc) {
+			waitForDebuggerCommand(vm)
+		}
 	}
 
 	if compiled.returns {

@@ -64,7 +64,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	wasm.SetDebugMode(*flagVerbose)
+	wasm.SetVerboseMode(*flagVerbose)
 
 	for i, fname := range flag.Args() {
 		if i > 0 {

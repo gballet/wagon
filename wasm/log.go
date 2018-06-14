@@ -13,10 +13,10 @@ import (
 var logger *log.Logger
 
 func init() {
-	SetDebugMode(false)
+	SetVerboseMode(false)
 }
 
-func SetDebugMode(dbg bool) {
+func SetVerboseMode(dbg bool) {
 	w := ioutil.Discard
 	if dbg {
 		w = os.Stderr

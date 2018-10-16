@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 
@@ -96,6 +97,10 @@ func NewDisassembly(fn wasm.Function, module *wasm.Module) (*Disassembly, error)
 		return nil, err
 	}
 	disas := &Disassembly{}
+
+	if len(module.FunctionIndexSpace) != len(module.Import.Entries)+len(module.Function.Types) {
+		panic(fmt.Sprintf("Attempting to disassemble a module that is missing imports %d != %d + %d", len(module.FunctionIndexSpace), len(module.Import.Entries), len(module.Function.Types)))
+	}
 
 	// A stack of int arrays holding indices to instructions that make the stack
 	// polymorphic. Each block has its corresponding array. We start with one

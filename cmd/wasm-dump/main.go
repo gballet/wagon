@@ -82,7 +82,42 @@ func process(w io.Writer, fname string) {
 	}
 	defer f.Close()
 
-	m, err := wasm.ReadModule(f, nil)
+	// Decode the module in order to fake its imports as exports
+	mod, err := wasm.DecodeModule(f)
+	if err != nil {
+		log.Fatalf("Could not read module: %v", err)
+	}
+
+	resolver := func(name string) (*wasm.Module, error) {
+		m := wasm.NewModule()
+		m.Types = mod.Types
+		m.Export = &wasm.SectionExports{
+			Entries: make(map[string]wasm.ExportEntry),
+		}
+		m.FunctionIndexSpace = []wasm.Function{}
+		for index, imp := range mod.Import.Entries {
+			fmt.Println(imp.ModuleName, imp.FieldName, imp.Type)
+			if imp.ModuleName == name {
+				m.Export.Entries[imp.FieldName] = wasm.ExportEntry{
+					FieldStr: name,
+					Kind:     imp.Type.Kind(),
+					Index:    uint32(index),
+				}
+				if imp.Type.Kind() == wasm.ExternalFunction {
+					m.FunctionIndexSpace = append(m.FunctionIndexSpace, wasm.Function{
+						Body: &wasm.FunctionBody{},
+					})
+				}
+			}
+		}
+		return m, nil
+	}
+
+	// We already read the file without trying to resolve imports,
+	// start over in order to do that work now.
+	f.Seek(0, os.SEEK_SET)
+
+	m, err := wasm.ReadModule(f, resolver)
 	if err != nil {
 		log.Fatalf("could not read module: %v", err)
 	}

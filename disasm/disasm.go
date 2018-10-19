@@ -98,8 +98,12 @@ func NewDisassembly(fn wasm.Function, module *wasm.Module) (*Disassembly, error)
 	}
 	disas := &Disassembly{}
 
-	if len(module.FunctionIndexSpace) != len(module.Import.Entries)+len(module.Function.Types) {
-		panic(fmt.Sprintf("Attempting to disassemble a module that is missing imports %d != %d + %d", len(module.FunctionIndexSpace), len(module.Import.Entries), len(module.Function.Types)))
+	if module.Import != nil {
+		ninternal, _ := leb128.ReadVarint32(bytes.NewReader(module.Code.Bytes))
+		nexternal := len(module.FunctionIndexSpace) - int(ninternal)
+		if nexternal != len(module.Import.Entries) {
+			panic(fmt.Sprintf("Attempting to disassemble a module that is missing imports %d != %d", nexternal, len(module.Import.Entries)))
+		}
 	}
 
 	// A stack of int arrays holding indices to instructions that make the stack

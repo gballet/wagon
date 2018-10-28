@@ -6,6 +6,7 @@ package wasm
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"reflect"
 
@@ -140,6 +141,10 @@ func ReadModule(r io.Reader, resolvePath ResolveFunc) (*Module, error) {
 	}
 
 	if m.Import != nil && resolvePath != nil {
+		if m.Code == nil {
+			return nil, fmt.Errorf("the module doesn't contain any function body")
+		}
+
 		err := m.resolveImports(resolvePath)
 		if err != nil {
 			return nil, err

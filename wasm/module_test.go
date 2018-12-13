@@ -50,7 +50,7 @@ func TestReadModule(t *testing.T) {
 
 // A list of resolver functions crafter to trigger specific problems
 // in module resolution.
-var moduleResolvers = map[string]wasm.ResolveFunc {
+var moduleResolvers = map[string]wasm.ResolveFunc{
 	"TestModuleSignatureLengthCheck": func(name string) (*wasm.Module, error) {
 		// Return an export with the same name but a different signature
 		m := wasm.NewModule()
@@ -156,7 +156,7 @@ func TestModuleSignatureCheck(t *testing.T) {
 	}
 
 	for name, resolver := range moduleResolvers {
-		t.Run(name, func (t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			r := bytes.NewReader(raw)
 			_, err = wasm.ReadModule(r, resolver)
 			if err == nil {

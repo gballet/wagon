@@ -48,15 +48,11 @@ func TestReadModule(t *testing.T) {
 	}
 }
 
-func TestModuleSignatureLengthCheck(t *testing.T) {
-	raw, err := ioutil.ReadFile("testdata/nofuncs.wasm")
-	if err != nil {
-		t.Fatalf("error reading module %v", err)
-	}
-
-	r := bytes.NewReader(raw)
-	_, err = wasm.ReadModule(r, func(name string) (*wasm.Module, error) {
-		/* Return an export with the same name but a different signature */
+// A list of resolver functions crafter to trigger specific problems
+// in module resolution.
+var moduleResolvers = map[string]wasm.ResolveFunc {
+	"TestModuleSignatureLengthCheck": func(name string) (*wasm.Module, error) {
+		// Return an export with the same name but a different signature
 		m := wasm.NewModule()
 		m.Types = &wasm.SectionTypes{
 			Entries: []wasm.FunctionSig{
@@ -86,21 +82,9 @@ func TestModuleSignatureLengthCheck(t *testing.T) {
 		}
 
 		return m, nil
-	})
-	if err == nil || err.Error() != "wasm: Invalid signature for import 0x0" {
-		t.Fatalf("error reading module %v", err)
-	}
-}
-
-func TestModuleSignatureParamTypeCheck(t *testing.T) {
-	raw, err := ioutil.ReadFile("testdata/nofuncs.wasm")
-	if err != nil {
-		t.Fatalf("error reading module %v", err)
-	}
-
-	r := bytes.NewReader(raw)
-	_, err = wasm.ReadModule(r, func(name string) (*wasm.Module, error) {
-		/* Return an export with the same name but a different signature */
+	},
+	"TestModuleSignatureParamTypeCheck": func(name string) (*wasm.Module, error) {
+		// Return an export with the same name but a different signature
 		m := wasm.NewModule()
 		m.Types = &wasm.SectionTypes{
 			Entries: []wasm.FunctionSig{
@@ -130,21 +114,9 @@ func TestModuleSignatureParamTypeCheck(t *testing.T) {
 		}
 
 		return m, nil
-	})
-	if err == nil || err.Error() != "wasm: Invalid signature for import 0x0" {
-		t.Fatalf("error reading module %v", err)
-	}
-}
-
-func TestModuleSignatureReturnTypeCheck(t *testing.T) {
-	raw, err := ioutil.ReadFile("testdata/nofuncs.wasm")
-	if err != nil {
-		t.Fatalf("error reading module %v", err)
-	}
-
-	r := bytes.NewReader(raw)
-	_, err = wasm.ReadModule(r, func(name string) (*wasm.Module, error) {
-		/* Return an export with the same name but a different signature */
+	},
+	"TestModuleSignatureReturnTypeCheck": func(name string) (*wasm.Module, error) {
+		// Return an export with the same name but a different signature
 		m := wasm.NewModule()
 		m.Types = &wasm.SectionTypes{
 			Entries: []wasm.FunctionSig{
@@ -174,8 +146,25 @@ func TestModuleSignatureReturnTypeCheck(t *testing.T) {
 		}
 
 		return m, nil
-	})
-	if err == nil || err.Error() != "wasm: Invalid signature for import 0x0" {
+	},
+}
+
+func TestModuleSignatureCheck(t *testing.T) {
+	raw, err := ioutil.ReadFile("testdata/nofuncs.wasm")
+	if err != nil {
 		t.Fatalf("error reading module %v", err)
+	}
+
+	for name, resolver := range moduleResolvers {
+		t.Run(name, func (t *testing.T) {
+			r := bytes.NewReader(raw)
+			_, err = wasm.ReadModule(r, resolver)
+			if err == nil {
+				t.Fatalf("Expected an error while reading the module")
+			}
+			if got, want := err.Error(), "wasm: invalid signature for import 0x0"; got != want {
+				t.Fatalf("invalid error. got=%q, want=%q", got, want)
+			}
+		})
 	}
 }

@@ -122,7 +122,7 @@ func (e InvalidFunctionIndexError) Error() string {
 type InvalidImportError uint32
 
 func (e InvalidImportError) Error() string {
-	return fmt.Sprintf("wasm: Invalid signature for import %#x", uint32(e))
+	return fmt.Sprintf("wasm: invalid signature for import %#x", uint32(e))
 }
 
 func (module *Module) resolveImports(resolve ResolveFunc) error {

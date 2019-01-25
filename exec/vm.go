@@ -450,6 +450,11 @@ outer:
 	return 0
 }
 
+// Restart readies the VM for another run.
+func (vm *VM) Restart() {
+	vm.abort = false
+}
+
 // Close frees any resources managed by the VM.
 func (vm *VM) Close() error {
 	vm.abort = true // prevents further use.

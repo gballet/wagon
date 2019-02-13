@@ -157,10 +157,25 @@ func NewVM(module *wasm.Module, opts ...VMOption) (*VM, error) {
 		}
 	}
 
-	for i, global := range module.GlobalIndexSpace {
-		val, err := module.ExecInitExpr(global.Init)
+	if err := vm.resetGlobals(); err != nil {
+		return nil, err
+	}
+
+	if module.Start != nil {
+		_, err := vm.ExecCode(int64(module.Start.Index))
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	return &vm, nil
+}
+
+func (vm *VM) resetGlobals() error {
+	for i, global := range vm.module.GlobalIndexSpace {
+		val, err := vm.module.ExecInitExpr(global.Init)
+		if err != nil {
+			return err
 		}
 		switch v := val.(type) {
 		case int32:
@@ -184,14 +199,7 @@ func NewVM(module *wasm.Module, opts ...VMOption) (*VM, error) {
 		}
 	}
 
-	if module.Start != nil {
-		_, err := vm.ExecCode(int64(module.Start.Index))
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &vm, nil
+	return nil
 }
 
 // Memory returns the linear memory space for the VM.
@@ -452,6 +460,8 @@ outer:
 
 // Restart readies the VM for another run.
 func (vm *VM) Restart() {
+	vm.resetGlobals()
+	vm.ctx.locals = make([]uint64, 0)
 	vm.abort = false
 }
 

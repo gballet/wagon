@@ -168,6 +168,16 @@ func NewVM(module *wasm.Module, opts ...VMOption) (*VM, error) {
 		}
 	}
 
+	if options.EnableAOT {
+		supportedBackend, backend := nativeBackend()
+		if supportedBackend {
+			vm.nativeBackend = backend
+			if err := vm.tryNativeCompile(); err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	return &vm, nil
 }
 
@@ -186,16 +196,6 @@ func (vm *VM) resetGlobals() error {
 			vm.globals[i] = uint64(math.Float32bits(v))
 		case float64:
 			vm.globals[i] = uint64(math.Float64bits(v))
-		}
-	}
-
-	if options.EnableAOT {
-		supportedBackend, backend := nativeBackend()
-		if supportedBackend {
-			vm.nativeBackend = backend
-			if err := vm.tryNativeCompile(); err != nil {
-				return nil, err
-			}
 		}
 	}
 
